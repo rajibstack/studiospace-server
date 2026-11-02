@@ -122,3 +122,39 @@ exports.googleLogin = async (req, res) => {
     return res.status(500).json({ message: err.message || "Internal server error" });
   }
 };
+
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const usersCollection = db.collection("users");
+    const userEmail = req.user?.email;
+    const { name, photoURL } = req.body;
+
+    if (!userEmail) {
+      return res.status(401).json({ message: "Unauthorized access" });
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (photoURL !== undefined) updateData.photoURL = photoURL;
+
+    await usersCollection.updateOne(
+      { email: userEmail },
+      { $set: updateData }
+    );
+
+    const updatedUser = await usersCollection.findOne({ email: userEmail });
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        photoURL: updatedUser.photoURL,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Internal server error" });
+  }
+};
