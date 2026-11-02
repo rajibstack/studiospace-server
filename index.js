@@ -18,6 +18,10 @@ app.use(
 );
 app.use(express.json());
 
+app.use("/api/auth", authRoutes);
+app.use("/api/studios", studioRoutes);
+app.use("/api/bookings", bookingRoutes);
+
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
   serverApi: {
@@ -35,10 +39,9 @@ async function startServer() {
     const db = client.db("studioSpaceDB");
     app.locals.db = db;
 
-    // Modular Routes Integration
-    app.use("/api/auth", authRoutes);
-    app.use("/api/studios", studioRoutes);
-    app.use("/api/bookings", bookingRoutes);
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
 
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error);
@@ -47,10 +50,6 @@ async function startServer() {
 
 app.get("/", (req, res) => {
   res.send("StudioSpace Server is running");
-});
-
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
 });
 
 startServer();

@@ -1,57 +1,135 @@
 const { ObjectId } = require("mongodb");
 
-exports.getAllStudios = async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const studios = await db.collection("studios").find({}).toArray();
-    return res.status(200).json({ studios });
-  } catch (err) {
-    return res.status(500).json({ message: err.message || "Internal server error" });
-  }
-};
-
-exports.getStudioById = async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const studio = await db.collection("studios").findOne({ _id: new ObjectId(req.params.id) });
-    if (!studio) {
-      return res.status(404).json({ message: "Studio not found" });
-    }
-    return res.status(200).json(studio);
-  } catch (err) {
-    return res.status(500).json({ message: err.message || "Internal server error" });
-  }
-};
-
 exports.createStudio = async (req, res) => {
   try {
     const db = req.app.locals.db;
-    const ownerIdentifier = req.user?.email || req.user?.userId || req.user?.id;
+    const studiosCollection = db.collection("studios");
+
     const newStudio = {
       ...req.body,
-      ownerEmail: ownerIdentifier,
+      createdAt: new Date(),
     };
-    const result = await db.collection("studios").insertOne(newStudio);
-    return res.status(201).json({ message: "Studio created successfully", insertedId: result.insertedId, ...newStudio });
+
+    const result = await studiosCollection.insertOne(newStudio);
+    return res.status(201).json({
+      message: "Studio created successfully",
+      insertedId: result.insertedId,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Failed to create studio" });
+  }
+};
+
+exports.getAllStudios = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const studiosCollection = db.collection("studios");
+    const studios = await studiosCollection.find({}).toArray();
+    return res.status(200).json(studios);
   } catch (err) {
     return res.status(500).json({ message: err.message || "Internal server error" });
   }
 };
 
-exports.getMyListings = async (postReq, res) => {
+exports.getFeaturedStudios = async (req, res) => {
   try {
-    const db = postReq.app.locals.db;
-    const ownerIdentifier = postReq.user?.email || postReq.user?.userId || postReq.user?.id;
+    const db = req.app.locals.db;
+    const studiosCollection = db.collection("studios");
+    const studios = await studiosCollection
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .toArray();
+    return res.status(200).json(studios);
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Internal server error" });
+  }
+};
 
-    const studios = await db.collection("studios").find({
-      $or: [
-        { ownerEmail: postReq.user?.email },
-        { ownerEmail: postReq.user?.userId },
-        { ownerEmail: postReq.user?.id }
-      ]
-    }).toArray();
+exports.getMyListings = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const studiosCollection = db.collection("studios");
+    const userEmail = req.user?.email;
 
-    return res.status(200).json({ studios });
+    if (!userEmail) {
+      return res.status(401).json({ message: "Unauthorized access" });
+    }
+
+    const myStudios = await studiosCollection
+      .find({
+        $or: [
+          { ownerEmail: userEmail },
+          { userEmail: userEmail },
+          { "owner.email": userEmail }
+        ]
+      })
+      .toArray();
+
+    return res.status(200).json(myStudios);
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Internal server error" });
+  }
+};
+
+exports.updateStudio = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const studiosCollection = db.collection("studios");
+    const { id } = req.params;
+    const userEmail = req.user?.email;
+
+    const studio = await studiosCollection.findOne({ _id: new ObjectId(id) });
+    if (!studio) {
+      return res.status(404).json({ message: "Studio not found" });
+    }
+
+    if (studio.ownerEmail !== userEmail && studio.userEmail !== userEmail && studio.owner?.email !== userEmail) {
+      return res.status(403).json({ message: "Forbidden: You can only update your own studio" });
+    }
+
+    const { title, location, price, image, description, category, securityDeposit, maxCapacity, amenities, overview } = req.body;
+    const updatedDoc = {
+      $set: {
+        title,
+        location,
+        price,
+        image,
+        description,
+        category,
+        securityDeposit,
+        maxCapacity,
+        amenities,
+        overview,
+        updatedAt: new Date(),
+      },
+    };
+
+    await studiosCollection.updateOne({ _id: new ObjectId(id) }, updatedDoc);
+    return res.status(200).json({ message: "Studio updated successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Internal server error" });
+  }
+};
+
+exports.deleteStudio = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const studiosCollection = db.collection("studios");
+    const { id } = req.params;
+    const userEmail = req.user?.email;
+
+    const studio = await studiosCollection.findOne({ _id: new ObjectId(id) });
+    if (!studio) {
+      return res.status(404).json({ message: "Studio not found" });
+    }
+
+    if (studio.ownerEmail !== userEmail && studio.userEmail !== userEmail && studio.owner?.email !== userEmail) {
+      return res.status(403).json({ message: "Forbidden: You can only delete your own studio" });
+    }
+
+    await studiosCollection.deleteOne({ _id: new ObjectId(id) });
+    return res.status(200).json({ message: "Studio deleted successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message || "Internal server error" });
   }
