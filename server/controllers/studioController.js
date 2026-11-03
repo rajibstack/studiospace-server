@@ -46,6 +46,30 @@ exports.getFeaturedStudios = async (req, res) => {
   }
 };
 
+exports.getStudioById = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const studiosCollection = db.collection("studios");
+    const { id } = req.params;
+
+    let query = {};
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] };
+    } else {
+      query = { _id: id };
+    }
+
+    const studio = await studiosCollection.findOne(query);
+    if (!studio) {
+      return res.status(404).json({ message: "Studio not found" });
+    }
+
+    return res.status(200).json(studio);
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Internal server error" });
+  }
+};
+
 exports.getMyListings = async (req, res) => {
   try {
     const db = req.app.locals.db;
@@ -79,7 +103,14 @@ exports.updateStudio = async (req, res) => {
     const { id } = req.params;
     const userEmail = req.user?.email;
 
-    const studio = await studiosCollection.findOne({ _id: new ObjectId(id) });
+    let query = {};
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] };
+    } else {
+      query = { _id: id };
+    }
+
+    const studio = await studiosCollection.findOne(query);
     if (!studio) {
       return res.status(404).json({ message: "Studio not found" });
     }
@@ -105,7 +136,7 @@ exports.updateStudio = async (req, res) => {
       },
     };
 
-    await studiosCollection.updateOne({ _id: new ObjectId(id) }, updatedDoc);
+    await studiosCollection.updateOne(query, updatedDoc);
     return res.status(200).json({ message: "Studio updated successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message || "Internal server error" });
@@ -119,7 +150,14 @@ exports.deleteStudio = async (req, res) => {
     const { id } = req.params;
     const userEmail = req.user?.email;
 
-    const studio = await studiosCollection.findOne({ _id: new ObjectId(id) });
+    let query = {};
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] };
+    } else {
+      query = { _id: id };
+    }
+
+    const studio = await studiosCollection.findOne(query);
     if (!studio) {
       return res.status(404).json({ message: "Studio not found" });
     }
@@ -128,7 +166,7 @@ exports.deleteStudio = async (req, res) => {
       return res.status(403).json({ message: "Forbidden: You can only delete your own studio" });
     }
 
-    await studiosCollection.deleteOne({ _id: new ObjectId(id) });
+    await studiosCollection.deleteOne(query);
     return res.status(200).json({ message: "Studio deleted successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message || "Internal server error" });

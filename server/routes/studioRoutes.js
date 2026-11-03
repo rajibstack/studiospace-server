@@ -3,8 +3,9 @@ const router = express.Router();
 const { 
   getAllStudios,
   getFeaturedStudios,
+  getStudioById,
+  getMyListings,
   createStudio, 
-  getMyListings, 
   updateStudio, 
   deleteStudio 
 } = require("../controllers/studioController");
@@ -14,9 +15,13 @@ const verifyToken = require("../middleware/verifyToken");
 router.get("/", getAllStudios);
 router.get("/featured", getFeaturedStudios);
 
+router.get("/my-listings", verifyToken, getMyListings);
+
+// Dynamic ID route
+router.get("/:id", getStudioById);
+
 // Protected routes
 router.post("/", verifyToken, createStudio);
-router.get("/my-listings", verifyToken, getMyListings);
 router.put("/:id", verifyToken, updateStudio);
 router.delete("/:id", verifyToken, deleteStudio);
 
