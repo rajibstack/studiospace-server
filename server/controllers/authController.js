@@ -2,6 +2,12 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { jwtDecode } = require("jwt-decode");
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+};
+
 exports.register = async (req, res) => {
   try {
     const { name, email, photoURL, password } = req.body;
@@ -28,6 +34,8 @@ exports.register = async (req, res) => {
 
     const result = await usersCollection.insertOne(newUser);
     const token = jwt.sign({ email, id: result.insertedId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    res.cookie("token", token, cookieOptions);
 
     return res.status(201).json({
       message: "User registered successfully",
@@ -60,6 +68,8 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign({ email, id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    res.cookie("token", token, cookieOptions);
 
     return res.status(200).json({
       message: "Login successful",
@@ -108,6 +118,8 @@ exports.googleLogin = async (req, res) => {
       { expiresIn: "7d" }
     );
 
+    res.cookie("token", jwtToken, cookieOptions);
+
     return res.status(200).json({
       message: "Google login successful",
       token: jwtToken,
@@ -118,6 +130,18 @@ exports.googleLogin = async (req, res) => {
         photoURL: user.photoURL,
       },
     });
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Internal server error" });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      ...cookieOptions,
+      maxAge: 0,
+    });
+    return res.status(200).json({ message: "Logged out successfully" });
   } catch (err) {
     return res.status(500).json({ message: err.message || "Internal server error" });
   }

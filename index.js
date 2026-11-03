@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 require("dotenv").config();
 
@@ -21,6 +22,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -39,13 +41,12 @@ async function connectDB() {
   return client.db("studioSpaceDB");
 }
 
-
 app.use(async (req, res, next) => {
   try {
     const db = await connectDB();
     app.locals.db = db;
     next();
-  } catch (error)  {
+  } catch (error) {
     console.error("Failed to connect to MongoDB:", error);
     res.status(500).json({ error: "Database connection failed" });
   }
@@ -58,7 +59,6 @@ app.use("/api/bookings", bookingRoutes);
 app.get("/", (req, res) => {
   res.send("StudioSpace Server is running");
 });
-
 
 connectDB()
   .then(() => {

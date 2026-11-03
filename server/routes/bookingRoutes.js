@@ -7,10 +7,11 @@ const {
 } = require("../controllers/bookingController");
 const verifyToken = require("../middleware/verifyToken");
 
+
 router.post("/", verifyToken, createBooking);
+
 router.get("/my-bookings", verifyToken, getUserBookings);
 
 router.patch("/:id", verifyToken, cancelBooking);
-router.patch("/:id", cancelBooking);
 
 module.exports = router;
