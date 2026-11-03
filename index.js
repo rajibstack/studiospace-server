@@ -22,10 +22,6 @@ app.use(
 );
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
-app.use("/api/studios", studioRoutes);
-app.use("/api/bookings", bookingRoutes);
-
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
   serverApi: {
@@ -34,7 +30,6 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-
 
 async function connectDB() {
   if (!client.topology || !client.topology.isConnected()) {
@@ -50,19 +45,29 @@ app.use(async (req, res, next) => {
     const db = await connectDB();
     app.locals.db = db;
     next();
-  } catch (error) {
+  } catch (error)  {
     console.error("Failed to connect to MongoDB:", error);
     res.status(500).json({ error: "Database connection failed" });
   }
 });
 
+app.use("/api/auth", authRoutes);
+app.use("/api/studios", studioRoutes);
+app.use("/api/bookings", bookingRoutes);
+
 app.get("/", (req, res) => {
   res.send("StudioSpace Server is running");
 });
 
-if (process.env.NODE_ENV !== "production") {
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+
+connectDB()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to connect to MongoDB on startup:", error);
   });
-}
+
 module.exports = app;
