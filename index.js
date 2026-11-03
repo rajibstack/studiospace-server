@@ -16,7 +16,7 @@ app.use(
       "http://localhost:3000",
       "https://studiospace-client-six.vercel.app"
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );

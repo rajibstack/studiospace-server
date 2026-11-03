@@ -85,7 +85,6 @@ exports.cancelBooking = async (req, res) => {
       return res.status(400).json({ message: "Invalid booking ID" });
     }
 
-
     const result = await db.collection("bookings").updateOne(
       { _id: new ObjectId(id) },
       { $set: { status: "Cancelled", updatedAt: new Date() } }

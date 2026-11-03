@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { 
-  createBooking, 
-  getUserBookings, 
-  cancelBooking 
+const {
+  createBooking,
+  getUserBookings,
+  cancelBooking,
 } = require("../controllers/bookingController");
 const verifyToken = require("../middleware/verifyToken");
 
@@ -11,5 +11,6 @@ router.post("/", verifyToken, createBooking);
 router.get("/my-bookings", verifyToken, getUserBookings);
 
 router.patch("/:id", verifyToken, cancelBooking);
+router.patch("/:id", cancelBooking);
 
 module.exports = router;
