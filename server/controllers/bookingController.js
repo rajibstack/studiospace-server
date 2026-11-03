@@ -25,6 +25,19 @@ exports.createBooking = async (req, res) => {
       formattedStudioId = studioId;
     }
 
+    const existingBooking = await bookingsCollection.findOne({
+      studioId: formattedStudioId,
+      date: date,
+      status: { $in: ["Confirmed", "Pending"] }, 
+    });
+
+    if (existingBooking) {
+      return res.status(400).json({
+        success: false,
+        message: "This studio is already booked or requested for the selected date. Please choose another date.",
+      });
+    }
+
     const newBooking = {
       studioId: formattedStudioId,
       studioTitle: studioTitle || "Studio Session",
