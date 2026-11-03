@@ -11,18 +11,15 @@ const {
 } = require("../controllers/studioController");
 const verifyToken = require("../middleware/verifyToken");
 
-// Public routes
 router.get("/", getAllStudios);
 router.get("/featured", getFeaturedStudios);
 
 router.get("/my-listings", verifyToken, getMyListings);
-
-// Dynamic ID route
 router.get("/:id", getStudioById);
 
-// Protected routes
 router.post("/", verifyToken, createStudio);
 router.put("/:id", verifyToken, updateStudio);
+router.patch("/:id", verifyToken, updateStudio); 
 router.delete("/:id", verifyToken, deleteStudio);
 
 module.exports = router;
