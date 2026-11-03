@@ -35,25 +35,34 @@ const client = new MongoClient(uri, {
   },
 });
 
-async function startServer() {
-  try {
+
+async function connectDB() {
+  if (!client.topology || !client.topology.isConnected()) {
     await client.connect();
     console.log("Connected to MongoDB successfully!");
+  }
+  return client.db("studioSpaceDB");
+}
 
-    const db = client.db("studioSpaceDB");
+
+app.use(async (req, res, next) => {
+  try {
+    const db = await connectDB();
     app.locals.db = db;
-
-    app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
-    });
-
+    next();
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error);
+    res.status(500).json({ error: "Database connection failed" });
   }
-}
+});
 
 app.get("/", (req, res) => {
   res.send("StudioSpace Server is running");
 });
 
-startServer();
+if (process.env.NODE_ENV !== "production") {
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}
+module.exports = app;
