@@ -7,6 +7,7 @@ require("dotenv").config();
 const authRoutes = require("./server/routes/authRoutes");
 const studioRoutes = require("./server/routes/studioRoutes");
 const bookingRoutes = require("./server/routes/bookingRoutes");
+const wishlistRoutes = require("./server/routes/wishlistRoutes"); 
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -55,6 +56,7 @@ app.use(async (req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/studios", studioRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/wishlist", wishlistRoutes); 
 
 app.get("/", (req, res) => {
   res.send("StudioSpace Server is running");
